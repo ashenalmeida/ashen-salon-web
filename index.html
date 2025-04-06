@@ -1,0 +1,1348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ashen Salon | Premium Beauty Experience</title>
+    <meta name="description" content="Experience luxury hair and beauty services at Ashen Salon. Book your appointment online today.">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#F59E0B',
+                        secondary: '#1F2937',
+                        accent: '#E5E7EB',
+                        dark: '#111827',
+                        light: '#F3F4F6'
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        display: ['Playfair Display', 'serif']
+                    },
+                    animation: {
+                        'float': 'float 6s ease-in-out infinite',
+                        'fade-in': 'fadeIn 1s ease-in-out',
+                        'slide-up': 'slideUp 0.8s ease-out'
+                    },
+                    keyframes: {
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-20px)' }
+                        },
+                        fadeIn: {
+                            '0%': { opacity: '0' },
+                            '100%': { opacity: '1' }
+                        },
+                        slideUp: {
+                            '0%': { transform: 'translateY(50px)', opacity: '0' },
+                            '100%': { transform: 'translateY(0)', opacity: '1' }
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Three.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    
+    <!-- p5.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.min.js"></script>
+    
+    <!-- GSAP for animations -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.11.4/gsap.min.js"></script>
+    
+    <!-- Splide for carousels -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@splidejs/splide@4.1.4/dist/css/splide.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/@splidejs/splide@4.1.4/dist/js/splide.min.js"></script>
+    
+    <style>
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #F59E0B;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #D97706;
+        }
+        
+        /* Custom cursor */
+        .cursor-dot {
+            width: 8px;
+            height: 8px;
+            background-color: #F59E0B;
+        }
+        .cursor-outline {
+            width: 30px;
+            height: 30px;
+            border: 2px solid hsla(0, 0%, 100%, 0.5);
+        }
+        .cursor-dot, .cursor-outline {
+            position: fixed;
+            top: 0;
+            left: 0;
+            transform: translate(-50%, -50%);
+            border-radius: 50%;
+            z-index: 999;
+            pointer-events: none;
+        }
+        
+        /* Particle background */
+        #particle-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            opacity: 0.3;
+        }
+        
+        /* 3D model container */
+        #model-container {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        /* Service card hover effect */
+        .service-card {
+            transition: all 0.3s ease;
+            transform-style: preserve-3d;
+        }
+        .service-card:hover {
+            transform: translateY(-10px) scale(1.02);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        }
+        
+        /* Booking form animation */
+        .booking-form {
+            transition: all 0.5s ease;
+        }
+        .booking-form:hover {
+            transform: perspective(1000px) rotateY(5deg);
+        }
+        
+        /* Loading animation */
+        @keyframes pulse {
+            0%, 100% { opacity: 0.5; }
+            50% { opacity: 1; }
+        }
+        .loading-pulse {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+    </style>
+</head>
+<body class="bg-light text-secondary font-sans antialiased overflow-x-hidden">
+    <!-- Custom cursor -->
+    <div class="cursor-dot"></div>
+    <div class="cursor-outline"></div>
+    
+    <!-- Particle background -->
+    <div id="particle-canvas"></div>
+    
+    <!-- Loading screen -->
+    <div id="loading-screen" class="fixed inset-0 bg-dark z-50 flex flex-col items-center justify-center transition-opacity duration-1000">
+        <div class="flex space-x-4 mb-8">
+            <div class="w-3 h-3 bg-primary rounded-full loading-pulse" style="animation-delay: 0s"></div>
+            <div class="w-3 h-3 bg-primary rounded-full loading-pulse" style="animation-delay: 0.2s"></div>
+            <div class="w-3 h-3 bg-primary rounded-full loading-pulse" style="animation-delay: 0.4s"></div>
+        </div>
+        <h2 class="text-2xl text-light font-medium">Loading Ashen Salon</h2>
+    </div>
+    
+    <!-- Navigation -->
+    <nav class="fixed w-full z-40 bg-dark bg-opacity-90 backdrop-blur-md transition-all duration-300">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-20 items-center">
+                <!-- Logo -->
+                <div class="flex-shrink-0 flex items-center">
+                    <a href="#home" class="text-2xl font-bold text-light hover:text-primary transition-colors duration-300 flex items-center">
+                        <span class="text-primary mr-1"><i class="fas fa-cut"></i></span>
+                        <span class="font-display">Ashen Salon</span>
+                    </a>
+                </div>
+                
+                <!-- Desktop Menu -->
+                <div class="hidden md:flex items-center space-x-8">
+                    <a href="#home" class="text-light hover:text-primary px-3 py-2 rounded-md text-sm font-medium transition-colors duration-300">Home</a>
+                    <a href="#services" class="text-light hover:text-primary px-3 py-2 rounded-md text-sm font-medium transition-colors duration-300">Services</a>
+                    <a href="#gallery" class="text-light hover:text-primary px-3 py-2 rounded-md text-sm font-medium transition-colors duration-300">Gallery</a>
+                    <a href="#team" class="text-light hover:text-primary px-3 py-2 rounded-md text-sm font-medium transition-colors duration-300">Our Team</a>
+                    <a href="#contact" class="text-light hover:text-primary px-3 py-2 rounded-md text-sm font-medium transition-colors duration-300">Contact</a>
+                    <button class="bg-primary hover:bg-yellow-600 text-dark font-bold py-2 px-6 rounded-full transition-all duration-300 transform hover:scale-105">
+                        Book Now
+                    </button>
+                </div>
+                
+                <!-- Mobile menu button -->
+                <div class="md:hidden flex items-center">
+                    <button id="mobile-menu-button" class="text-light hover:text-primary focus:outline-none">
+                        <i class="fas fa-bars text-2xl"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Mobile Menu -->
+        <div id="mobile-menu" class="md:hidden hidden bg-dark bg-opacity-95 backdrop-blur-md">
+            <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3">
+                <a href="#home" class="text-light hover:text-primary block px-3 py-2 rounded-md text-base font-medium transition-colors duration-300">Home</a>
+                <a href="#services" class="text-light hover:text-primary block px-3 py-2 rounded-md text-base font-medium transition-colors duration-300">Services</a>
+                <a href="#gallery" class="text-light hover:text-primary block px-3 py-2 rounded-md text-base font-medium transition-colors duration-300">Gallery</a>
+                <a href="#team" class="text-light hover:text-primary block px-3 py-2 rounded-md text-base font-medium transition-colors duration-300">Our Team</a>
+                <a href="#contact" class="text-light hover:text-primary block px-3 py-2 rounded-md text-base font-medium transition-colors duration-300">Contact</a>
+                <button class="w-full bg-primary hover:bg-yellow-600 text-dark font-bold py-2 px-6 rounded-full transition-all duration-300 mt-2">
+                    Book Now
+                </button>
+            </div>
+        </div>
+    </nav>
+    
+    <!-- Hero Section -->
+    <section id="home" class="relative h-screen flex items-center justify-center overflow-hidden">
+        <div class="absolute inset-0 bg-gradient-to-b from-dark to-transparent opacity-80 z-10"></div>
+        
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 z-20 text-center">
+            <h1 class="text-5xl md:text-7xl font-display font-bold text-light mb-6 animate-fade-in">
+                <span class="text-primary">Redefine</span> Your Beauty
+            </h1>
+            <p class="text-xl md:text-2xl text-accent mb-10 max-w-3xl mx-auto animate-fade-in" style="animation-delay: 0.3s">
+                Experience luxury hair and beauty treatments tailored to your unique style at Ashen Salon.
+            </p>
+            <div class="flex flex-col sm:flex-row justify-center gap-4 animate-fade-in" style="animation-delay: 0.6s">
+                <a href="#booking" class="bg-primary hover:bg-yellow-600 text-dark font-bold py-4 px-8 rounded-full transition-all duration-300 transform hover:scale-105 text-lg">
+                    Book Appointment
+                </a>
+                <a href="#services" class="border-2 border-primary hover:bg-primary hover:bg-opacity-20 text-light font-bold py-4 px-8 rounded-full transition-all duration-300 transform hover:scale-105 text-lg">
+                    Explore Services
+                </a>
+            </div>
+        </div>
+        
+        <!-- Animated floating elements -->
+        <div class="absolute top-1/4 left-1/4 w-8 h-8 rounded-full bg-primary opacity-20 animate-float" style="animation-delay: 0s"></div>
+        <div class="absolute top-1/3 right-1/4 w-12 h-12 rounded-full bg-primary opacity-30 animate-float" style="animation-delay: 1s"></div>
+        <div class="absolute bottom-1/4 left-1/3 w-10 h-10 rounded-full bg-primary opacity-25 animate-float" style="animation-delay: 2s"></div>
+        <div class="absolute bottom-1/3 right-1/3 w-6 h-6 rounded-full bg-primary opacity-20 animate-float" style="animation-delay: 3s"></div>
+    </section>
+    
+    <!-- About Section -->
+    <section class="py-20 bg-white">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid md:grid-cols-2 gap-16 items-center">
+                <div class="animate-slide-up">
+                    <h2 class="text-4xl font-display font-bold mb-6">
+                        <span class="text-primary">Ashen Salon</span> - Where Beauty Meets Art
+                    </h2>
+                    <p class="text-lg mb-6">
+                        Founded in 2015, Ashen Salon has become a sanctuary for those seeking exceptional beauty services in a luxurious, welcoming environment.
+                    </p>
+                    <p class="text-lg mb-8">
+                        Our team of master stylists and aestheticians are dedicated to bringing out your natural beauty through personalized treatments and cutting-edge techniques.
+                    </p>
+                    <div class="flex flex-wrap gap-4">
+                        <div class="flex items-center">
+                            <div class="bg-primary bg-opacity-10 p-3 rounded-full mr-3">
+                                <i class="fas fa-award text-primary text-xl"></i>
+                            </div>
+                            <span class="font-medium">Award Winning</span>
+                        </div>
+                        <div class="flex items-center">
+                            <div class="bg-primary bg-opacity-10 p-3 rounded-full mr-3">
+                                <i class="fas fa-leaf text-primary text-xl"></i>
+                            </div>
+                            <span class="font-medium">Eco-Friendly</span>
+                        </div>
+                        <div class="flex items-center">
+                            <div class="bg-primary bg-opacity-10 p-3 rounded-full mr-3">
+                                <i class="fas fa-star text-primary text-xl"></i>
+                            </div>
+                            <span class="font-medium">5-Star Rated</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="relative h-96 rounded-2xl overflow-hidden shadow-2xl animate-slide-up" style="animation-delay: 0.2s">
+                    <!-- Placeholder for 3D model or image -->
+                    <div id="model-container" class="w-full h-full bg-gradient-to-br from-dark to-primary flex items-center justify-center">
+                        <div class="text-center text-light">
+                            <i class="fas fa-cut text-6xl mb-4"></i>
+                            <p class="text-xl">Salon Experience</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Services Section -->
+    <section id="services" class="py-20 bg-light">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16">
+                <span class="text-primary font-medium uppercase tracking-wider">Our Services</span>
+                <h2 class="text-4xl font-display font-bold mt-2 mb-4">Premium Beauty Treatments</h2>
+                <p class="text-lg max-w-2xl mx-auto">
+                    We offer a comprehensive range of services designed to enhance your natural beauty and boost your confidence.
+                </p>
+            </div>
+            
+            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <!-- Service Card 1 -->
+                <div class="service-card bg-white p-8 rounded-xl shadow-lg transition-all duration-300 animate-slide-up">
+                    <div class="bg-primary bg-opacity-10 w-16 h-16 rounded-full flex items-center justify-center mb-6">
+                        <i class="fas fa-cut text-primary text-2xl"></i>
+                    </div>
+                    <h3 class="text-2xl font-display font-bold mb-3">Hair Styling</h3>
+                    <p class="text-gray-600 mb-4">
+                        From precision cuts to creative styling, our experts will create a look that complements your features and lifestyle.
+                    </p>
+                    <ul class="space-y-2 mb-6">
+                        <li class="flex items-center">
+                            <i class="fas fa-check text-primary mr-2"></i>
+                            <span>Custom Haircuts</span>
+                        </li>
+                        <li class="flex items-center">
+                            <i class="fas fa-check text-primary mr-2"></i>
+                            <span>Blowouts & Styling</span>
+                        </li>
+                        <li class="flex items-center">
+                            <i class="fas fa-check text-primary mr-2"></i>
+                            <span>Special Occasion</span>
+                        </li>
+                    </ul>
+                    <div class="flex justify-between items-center">
+                        <span class="font-bold text-lg">From $50</span>
+                        <a href="#booking" class="text-primary font-medium hover:underline">Book Now</a>
+                    </div>
+                </div>
+                
+                <!-- Service Card 2 -->
+                <div class="service-card bg-white p-8 rounded-xl shadow-lg transition-all duration-300 animate-slide-up" style="animation-delay: 0.1s">
+                    <div class="bg-primary bg-opacity-10 w-16 h-16 rounded-full flex items-center justify-center mb-6">
+                        <i class="fas fa-paint-brush text-primary text-2xl"></i>
+                    </div>
+                    <h3 class="text-2xl font-display font-bold mb-3">Hair Coloring</h3>
+                    <p class="text-gray-600 mb-4">
+                        Transform your look with our expert color services, from natural highlights to bold fashion colors.
+                    </p>
+                    <ul class="space-y-2 mb-6">
+                        <li class="flex items-center">
+                            <i class="fas fa-check text-primary mr-2"></i>
+                            <span>Balayage & Highlights</span>
+                        </li>
+                        <li class="flex items-center">
+                            <i class="fas fa-check text-primary mr-2"></i>
+                            <span>Full Color</span>
+                        </li>
+                        <li class="flex items-center">
+                            <i class="fas fa-check text-primary mr-2"></i>
+                            <span>Color Correction</span>
+                        </li>
+                    </ul>
+                    <div class="flex justify-between items-center">
+                        <span class="font-bold text-lg">From $80</span>
+                        <a href="#booking" class="text-primary font-medium hover:underline">Book Now</a>
+                    </div>
+                </div>
+                
+                <!-- Service Card 3 -->
+                <div class="service-card bg-white p-8 rounded-xl shadow-lg transition-all duration-300 animate-slide-up" style="animation-delay: 0.2s">
+                    <div class="bg-primary bg-opacity-10 w-16 h-16 rounded-full flex items-center justify-center mb-6">
+                        <i class="fas fa-spa text-primary text-2xl"></i>
+                    </div>
+                    <h3 class="text-2xl font-display font-bold mb-3">Skin Care</h3>
+                    <p class="text-gray-600 mb-4">
+                        Rejuvenate your skin with our professional facials and advanced skincare treatments.
+                    </p>
+                    <ul class="space-y-2 mb-6">
+                        <li class="flex items-center">
+                            <i class="fas fa-check text-primary mr-2"></i>
+                            <span>Custom Facials</span>
+                        </li>
+                        <li class="flex items-center">
+                            <i class="fas fa-check text-primary mr-2"></i>
+                            <span>Anti-Aging Treatments</span>
+                        </li>
+                        <li class="flex items-center">
+                            <i class="fas fa-check text-primary mr-2"></i>
+                            <span>Acne Solutions</span>
+                        </li>
+                    </ul>
+                    <div class="flex justify-between items-center">
+                        <span class="font-bold text-lg">From $65</span>
+                        <a href="#booking" class="text-primary font-medium hover:underline">Book Now</a>
+                    </div>
+                </div>
+                
+                <!-- Service Card 4 -->
+                <div class="service-card bg-white p-8 rounded-xl shadow-lg transition-all duration-300 animate-slide-up" style="animation-delay: 0.3s">
+                    <div class="bg-primary bg-opacity-10 w-16 h-16 rounded-full flex items-center justify-center mb-6">
+                        <i class="fas fa-hand-sparkles text-primary text-2xl"></i>
+                    </div>
+                    <h3 class="text-2xl font-display font-bold mb-3">Nail Care</h3>
+                    <p class="text-gray-600 mb-4">
+                        Pamper your hands and feet with our luxurious manicure and pedicure services.
+                    </p>
+                    <ul class="space-y-2 mb-6">
+                        <li class="flex items-center">
+                            <i class="fas fa-check text-primary mr-2"></i>
+                            <span>Classic Manicure</span>
+                        </li>
+                        <li class="flex items-center">
+                            <i class="fas fa-check text-primary mr-2"></i>
+                            <span>Spa Pedicure</span>
+                        </li>
+                        <li class="flex items-center">
+                            <i class="fas fa-check text-primary mr-2"></i>
+                            <span>Gel & Acrylic</span>
+                        </li>
+                    </ul>
+                    <div class="flex justify-between items-center">
+                        <span class="font-bold text-lg">From $35</span>
+                        <a href="#booking" class="text-primary font-medium hover:underline">Book Now</a>
+                    </div>
+                </div>
+                
+                <!-- Service Card 5 -->
+                <div class="service-card bg-white p-8 rounded-xl shadow-lg transition-all duration-300 animate-slide-up" style="animation-delay: 0.4s">
+                    <div class="bg-primary bg-opacity-10 w-16 h-16 rounded-full flex items-center justify-center mb-6">
+                        <i class="fas fa-fire text-primary text-2xl"></i>
+                    </div>
+                    <h3 class="text-2xl font-display font-bold mb-3">Waxing</h3>
+                    <p class="text-gray-600 mb-4">
+                        Professional hair removal services for smooth, radiant skin that lasts.
+                    </p>
+                    <ul class="space-y-2 mb-6">
+                        <li class="flex items-center">
+                            <i class="fas fa-check text-primary mr-2"></i>
+                            <span>Eyebrow Shaping</span>
+                        </li>
+                        <li class="flex items-center">
+                            <i class="fas fa-check text-primary mr-2"></i>
+                            <span>Facial Waxing</span>
+                        </li>
+                        <li class="flex items-center">
+                            <i class="fas fa-check text-primary mr-2"></i>
+                            <span>Body Waxing</span>
+                        </li>
+                    </ul>
+                    <div class="flex justify-between items-center">
+                        <span class="font-bold text-lg">From $25</span>
+                        <a href="#booking" class="text-primary font-medium hover:underline">Book Now</a>
+                    </div>
+                </div>
+                
+                <!-- Service Card 6 -->
+                <div class="service-card bg-white p-8 rounded-xl shadow-lg transition-all duration-300 animate-slide-up" style="animation-delay: 0.5s">
+                    <div class="bg-primary bg-opacity-10 w-16 h-16 rounded-full flex items-center justify-center mb-6">
+                        <i class="fas fa-magic text-primary text-2xl"></i>
+                    </div>
+                    <h3 class="text-2xl font-display font-bold mb-3">Makeup</h3>
+                    <p class="text-gray-600 mb-4">
+                        Flawless makeup application for any occasion, from natural daytime looks to glamorous evening styles.
+                    </p>
+                    <ul class="space-y-2 mb-6">
+                        <li class="flex items-center">
+                            <i class="fas fa-check text-primary mr-2"></i>
+                            <span>Bridal Makeup</span>
+                        </li>
+                        <li class="flex items-center">
+                            <i class="fas fa-check text-primary mr-2"></i>
+                            <span>Special Events</span>
+                        </li>
+                        <li class="flex items-center">
+                            <i class="fas fa-check text-primary mr-2"></i>
+                            <span>Makeup Lessons</span>
+                        </li>
+                    </ul>
+                    <div class="flex justify-between items-center">
+                        <span class="font-bold text-lg">From $60</span>
+                        <a href="#booking" class="text-primary font-medium hover:underline">Book Now</a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="text-center mt-16">
+                <a href="#booking" class="inline-block bg-primary hover:bg-yellow-600 text-dark font-bold py-4 px-8 rounded-full transition-all duration-300 transform hover:scale-105">
+                    View All Services
+                </a>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Gallery Section -->
+    <section id="gallery" class="py-20 bg-white">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16">
+                <span class="text-primary font-medium uppercase tracking-wider">Our Work</span>
+                <h2 class="text-4xl font-display font-bold mt-2 mb-4">Transformation Gallery</h2>
+                <p class="text-lg max-w-2xl mx-auto">
+                    Browse through our collection of stunning before-and-after transformations and creative styles.
+                </p>
+            </div>
+            
+            <!-- Gallery Carousel -->
+            <div class="splide" aria-label="Salon Gallery">
+                <div class="splide__track">
+                    <ul class="splide__list">
+                        <li class="splide__slide">
+                            <div class="relative h-96 rounded-xl overflow-hidden shadow-lg">
+                                <div class="absolute inset-0 bg-gradient-to-b from-transparent to-dark opacity-80"></div>
+                                <div class="absolute bottom-0 left-0 p-6 text-light">
+                                    <h3 class="text-2xl font-display font-bold mb-2">Vibrant Color Transformation</h3>
+                                    <p class="text-accent">From natural brunette to bold copper balayage</p>
+                                </div>
+                                <div class="w-full h-full bg-gradient-to-br from-dark to-primary flex items-center justify-center">
+                                    <i class="fas fa-image text-6xl text-light opacity-50"></i>
+                                </div>
+                            </div>
+                        </li>
+                        <li class="splide__slide">
+                            <div class="relative h-96 rounded-xl overflow-hidden shadow-lg">
+                                <div class="absolute inset-0 bg-gradient-to-b from-transparent to-dark opacity-80"></div>
+                                <div class="absolute bottom-0 left-0 p-6 text-light">
+                                    <h3 class="text-2xl font-display font-bold mb-2">Precision Haircut</h3>
+                                    <p class="text-accent">Layered bob with face-framing highlights</p>
+                                </div>
+                                <div class="w-full h-full bg-gradient-to-br from-dark to-primary flex items-center justify-center">
+                                    <i class="fas fa-image text-6xl text-light opacity-50"></i>
+                                </div>
+                            </div>
+                        </li>
+                        <li class="splide__slide">
+                            <div class="relative h-96 rounded-xl overflow-hidden shadow-lg">
+                                <div class="absolute inset-0 bg-gradient-to-b from-transparent to-dark opacity-80"></div>
+                                <div class="absolute bottom-0 left-0 p-6 text-light">
+                                    <h3 class="text-2xl font-display font-bold mb-2">Bridal Makeup</h3>
+                                    <p class="text-accent">Natural glam for a timeless wedding look</p>
+                                </div>
+                                <div class="w-full h-full bg-gradient-to-br from-dark to-primary flex items-center justify-center">
+                                    <i class="fas fa-image text-6xl text-light opacity-50"></i>
+                                </div>
+                            </div>
+                        </li>
+                        <li class="splide__slide">
+                            <div class="relative h-96 rounded-xl overflow-hidden shadow-lg">
+                                <div class="absolute inset-0 bg-gradient-to-b from-transparent to-dark opacity-80"></div>
+                                <div class="absolute bottom-0 left-0 p-6 text-light">
+                                    <h3 class="text-2xl font-display font-bold mb-2">Men's Grooming</h3>
+                                    <p class="text-accent">Classic cut with modern styling</p>
+                                </div>
+                                <div class="w-full h-full bg-gradient-to-br from-dark to-primary flex items-center justify-center">
+                                    <i class="fas fa-image text-6xl text-light opacity-50"></i>
+                                </div>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Team Section -->
+    <section id="team" class="py-20 bg-light">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16">
+                <span class="text-primary font-medium uppercase tracking-wider">Our Experts</span>
+                <h2 class="text-4xl font-display font-bold mt-2 mb-4">Meet Our Stylists</h2>
+                <p class="text-lg max-w-2xl mx-auto">
+                    Our talented team of beauty professionals is dedicated to making you look and feel your best.
+                </p>
+            </div>
+            
+            <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+                <!-- Team Member 1 -->
+                <div class="bg-white rounded-xl overflow-hidden shadow-lg transition-all duration-300 hover:shadow-xl animate-slide-up">
+                    <div class="h-64 bg-gradient-to-br from-dark to-primary flex items-center justify-center">
+                        <i class="fas fa-user text-6xl text-light opacity-50"></i>
+                    </div>
+                    <div class="p-6">
+                        <h3 class="text-2xl font-display font-bold mb-1">Sarah Johnson</h3>
+                        <p class="text-primary font-medium mb-4">Master Colorist</p>
+                        <p class="text-gray-600 mb-4">
+                            With over 15 years of experience, Sarah specializes in customized color formulations.
+                        </p>
+                        <div class="flex space-x-4">
+                            <a href="#" class="text-gray-400 hover:text-primary transition-colors duration-300">
+                                <i class="fab fa-instagram"></i>
+                            </a>
+                            <a href="#" class="text-gray-400 hover:text-primary transition-colors duration-300">
+                                <i class="fab fa-facebook"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Team Member 2 -->
+                <div class="bg-white rounded-xl overflow-hidden shadow-lg transition-all duration-300 hover:shadow-xl animate-slide-up" style="animation-delay: 0.1s">
+                    <div class="h-64 bg-gradient-to-br from-dark to-primary flex items-center justify-center">
+                        <i class="fas fa-user text-6xl text-light opacity-50"></i>
+                    </div>
+                    <div class="p-6">
+                        <h3 class="text-2xl font-display font-bold mb-1">Michael Chen</h3>
+                        <p class="text-primary font-medium mb-4">Cutting Specialist</p>
+                        <p class="text-gray-600 mb-4">
+                            Michael's precision cutting techniques create flawless shapes that grow out beautifully.
+                        </p>
+                        <div class="flex space-x-4">
+                            <a href="#" class="text-gray-400 hover:text-primary transition-colors duration-300">
+                                <i class="fab fa-instagram"></i>
+                            </a>
+                            <a href="#" class="text-gray-400 hover:text-primary transition-colors duration-300">
+                                <i class="fab fa-facebook"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Team Member 3 -->
+                <div class="bg-white rounded-xl overflow-hidden shadow-lg transition-all duration-300 hover:shadow-xl animate-slide-up" style="animation-delay: 0.2s">
+                    <div class="h-64 bg-gradient-to-br from-dark to-primary flex items-center justify-center">
+                        <i class="fas fa-user text-6xl text-light opacity-50"></i>
+                    </div>
+                    <div class="p-6">
+                        <h3 class="text-2xl font-display font-bold mb-1">Emma Rodriguez</h3>
+                        <p class="text-primary font-medium mb-4">Skincare Expert</p>
+                        <p class="text-gray-600 mb-4">
+                            Emma's holistic approach to skincare combines advanced treatments with natural solutions.
+                        </p>
+                        <div class="flex space-x-4">
+                            <a href="#" class="text-gray-400 hover:text-primary transition-colors duration-300">
+                                <i class="fab fa-instagram"></i>
+                            </a>
+                            <a href="#" class="text-gray-400 hover:text-primary transition-colors duration-300">
+                                <i class="fab fa-facebook"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Team Member 4 -->
+                <div class="bg-white rounded-xl overflow-hidden shadow-lg transition-all duration-300 hover:shadow-xl animate-slide-up" style="animation-delay: 0.3s">
+                    <div class="h-64 bg-gradient-to-br from-dark to-primary flex items-center justify-center">
+                        <i class="fas fa-user text-6xl text-light opacity-50"></i>
+                    </div>
+                    <div class="p-6">
+                        <h3 class="text-2xl font-display font-bold mb-1">David Wilson</h3>
+                        <p class="text-primary font-medium mb-4">Men's Grooming</p>
+                        <p class="text-gray-600 mb-4">
+                            David brings contemporary style to traditional barbering for the modern gentleman.
+                        </p>
+                        <div class="flex space-x-4">
+                            <a href="#" class="text-gray-400 hover:text-primary transition-colors duration-300">
+                                <i class="fab fa-instagram"></i>
+                            </a>
+                            <a href="#" class="text-gray-400 hover:text-primary transition-colors duration-300">
+                                <i class="fab fa-facebook"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Testimonials Section -->
+    <section class="py-20 bg-white">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16">
+                <span class="text-primary font-medium uppercase tracking-wider">Client Love</span>
+                <h2 class="text-4xl font-display font-bold mt-2 mb-4">What Our Clients Say</h2>
+                <p class="text-lg max-w-2xl mx-auto">
+                    Don't just take our word for it - hear from our satisfied clients about their experiences.
+                </p>
+            </div>
+            
+            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <!-- Testimonial 1 -->
+                <div class="bg-light p-8 rounded-xl shadow-md animate-slide-up">
+                    <div class="flex items-center mb-4">
+                        <div class="text-primary text-2xl mr-2">
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                        </div>
+                    </div>
+                    <p class="text-gray-600 italic mb-6">
+                        "Sarah transformed my hair after years of damage from box dyes. Her color expertise is unmatched and my hair has never been healthier!"
+                    </p>
+                    <div class="flex items-center">
+                        <div class="bg-primary bg-opacity-10 w-12 h-12 rounded-full flex items-center justify-center mr-4">
+                            <i class="fas fa-user text-primary"></i>
+                        </div>
+                        <div>
+                            <h4 class="font-bold">Jessica M.</h4>
+                            <p class="text-sm text-gray-500">Regular Client</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Testimonial 2 -->
+                <div class="bg-light p-8 rounded-xl shadow-md animate-slide-up" style="animation-delay: 0.1s">
+                    <div class="flex items-center mb-4">
+                        <div class="text-primary text-2xl mr-2">
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                        </div>
+                    </div>
+                    <p class="text-gray-600 italic mb-6">
+                        "The entire team makes you feel like family. I've been coming here for 5 years and wouldn't trust my hair to anyone else."
+                    </p>
+                    <div class="flex items-center">
+                        <div class="bg-primary bg-opacity-10 w-12 h-12 rounded-full flex items-center justify-center mr-4">
+                            <i class="fas fa-user text-primary"></i>
+                        </div>
+                        <div>
+                            <h4 class="font-bold">Robert T.</h4>
+                            <p class="text-sm text-gray-500">Regular Client</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Testimonial 3 -->
+                <div class="bg-light p-8 rounded-xl shadow-md animate-slide-up" style="animation-delay: 0.2s">
+                    <div class="flex items-center mb-4">
+                        <div class="text-primary text-2xl mr-2">
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                        </div>
+                    </div>
+                    <p class="text-gray-600 italic mb-6">
+                        "Emma's facials are magical! My skin has completely transformed in just 3 months. The salon ambiance is so relaxing too."
+                    </p>
+                    <div class="flex items-center">
+                        <div class="bg-primary bg-opacity-10 w-12 h-12 rounded-full flex items-center justify-center mr-4">
+                            <i class="fas fa-user text-primary"></i>
+                        </div>
+                        <div>
+                            <h4 class="font-bold">Amanda K.</h4>
+                            <p class="text-sm text-gray-500">Regular Client</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Booking Section -->
+    <section id="booking" class="py-20 bg-dark text-light">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid md:grid-cols-2 gap-16 items-center">
+                <div class="animate-slide-up">
+                    <h2 class="text-4xl font-display font-bold mb-6">
+                        <span class="text-primary">Book</span> Your Appointment
+                    </h2>
+                    <p class="text-lg mb-6 text-accent">
+                        Ready to experience the Ashen Salon difference? Schedule your appointment online or give us a call.
+                    </p>
+                    <div class="space-y-4 mb-8">
+                        <div class="flex items-start">
+                            <div class="bg-primary bg-opacity-20 p-3 rounded-full mr-4 flex-shrink-0">
+                                <i class="fas fa-phone text-primary"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-lg">Call Us</h4>
+                                <p class="text-accent">(123) 456-7890</p>
+                            </div>
+                        </div>
+                        <div class="flex items-start">
+                            <div class="bg-primary bg-opacity-20 p-3 rounded-full mr-4 flex-shrink-0">
+                                <i class="fas fa-clock text-primary"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-lg">Hours</h4>
+                                <p class="text-accent">Tuesday - Saturday: 9AM - 7PM</p>
+                                <p class="text-accent">Sunday & Monday: Closed</p>
+                            </div>
+                        </div>
+                        <div class="flex items-start">
+                            <div class="bg-primary bg-opacity-20 p-3 rounded-full mr-4 flex-shrink-0">
+                                <i class="fas fa-map-marker-alt text-primary"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-lg">Location</h4>
+                                <p class="text-accent">123 Beauty Street, Colombo, Sri Lanka</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="booking-form bg-white p-8 rounded-xl shadow-2xl animate-slide-up" style="animation-delay: 0.2s">
+                    <h3 class="text-2xl font-display font-bold mb-6 text-dark">Request Appointment</h3>
+                    <form>
+                        <div class="grid md:grid-cols-2 gap-4 mb-4">
+                            <div>
+                                <label for="first-name" class="block text-sm font-medium text-gray-700 mb-1">First Name</label>
+                                <input type="text" id="first-name" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-primary focus:border-primary">
+                            </div>
+                            <div>
+                                <label for="last-name" class="block text-sm font-medium text-gray-700 mb-1">Last Name</label>
+                                <input type="text" id="last-name" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-primary focus:border-primary">
+                            </div>
+                        </div>
+                        <div class="mb-4">
+                            <label for="email" class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                            <input type="email" id="email" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-primary focus:border-primary">
+                        </div>
+                        <div class="mb-4">
+                            <label for="phone" class="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+                            <input type="tel" id="phone" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-primary focus:border-primary">
+                        </div>
+                        <div class="grid md:grid-cols-2 gap-4 mb-4">
+                            <div>
+                                <label for="service" class="block text-sm font-medium text-gray-700 mb-1">Service</label>
+                                <select id="service" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-primary focus:border-primary">
+                                    <option>Haircut & Styling</option>
+                                    <option>Hair Coloring</option>
+                                    <option>Skincare Treatment</option>
+                                    <option>Nail Services</option>
+                                    <option>Makeup</option>
+                                    <option>Waxing</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="stylist" class="block text-sm font-medium text-gray-700 mb-1">Preferred Stylist</label>
+                                <select id="stylist" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-primary focus:border-primary">
+                                    <option>Any Stylist</option>
+                                    <option>Sarah Johnson</option>
+                                    <option>Michael Chen</option>
+                                    <option>Emma Rodriguez</option>
+                                    <option>David Wilson</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="mb-6">
+                            <label for="date" class="block text-sm font-medium text-gray-700 mb-1">Preferred Date & Time</label>
+                            <input type="datetime-local" id="date" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-primary focus:border-primary">
+                        </div>
+                        <button type="submit" class="w-full bg-primary hover:bg-yellow-600 text-dark font-bold py-3 px-6 rounded-md transition-all duration-300">
+                            Book Now
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Contact Section -->
+    <section id="contact" class="py-20 bg-white">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16">
+                <span class="text-primary font-medium uppercase tracking-wider">Get In Touch</span>
+                <h2 class="text-4xl font-display font-bold mt-2 mb-4">Contact Us</h2>
+                <p class="text-lg max-w-2xl mx-auto">
+                    Have questions or special requests? We'd love to hear from you.
+                </p>
+            </div>
+            
+            <div class="grid md:grid-cols-2 gap-12">
+                <div class="animate-slide-up">
+                    <h3 class="text-2xl font-display font-bold mb-6 text-dark">Visit Our Salon</h3>
+                    <div class="bg-light p-8 rounded-xl shadow-md">
+                        <div class="flex items-start mb-6">
+                            <div class="bg-primary bg-opacity-10 p-3 rounded-full mr-4 flex-shrink-0">
+                                <i class="fas fa-map-marker-alt text-primary"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-lg mb-1">Address</h4>
+                                <p class="text-gray-600">123 Beauty Street, Colombo, Sri Lanka</p>
+                            </div>
+                        </div>
+                        <div class="flex items-start mb-6">
+                            <div class="bg-primary bg-opacity-10 p-3 rounded-full mr-4 flex-shrink-0">
+                                <i class="fas fa-phone text-primary"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-lg mb-1">Phone</h4>
+                                <p class="text-gray-600">(123) 456-7890</p>
+                            </div>
+                        </div>
+                        <div class="flex items-start mb-6">
+                            <div class="bg-primary bg-opacity-10 p-3 rounded-full mr-4 flex-shrink-0">
+                                <i class="fas fa-envelope text-primary"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-lg mb-1">Email</h4>
+                                <p class="text-gray-600">info@ashensalon.com</p>
+                            </div>
+                        </div>
+                        <div class="flex items-start">
+                            <div class="bg-primary bg-opacity-10 p-3 rounded-full mr-4 flex-shrink-0">
+                                <i class="fas fa-clock text-primary"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-lg mb-1">Hours</h4>
+                                <p class="text-gray-600">Tuesday - Saturday: 9AM - 7PM</p>
+                                <p class="text-gray-600">Sunday & Monday: Closed</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <h3 class="text-2xl font-display font-bold mt-12 mb-6 text-dark">Follow Us</h3>
+                    <div class="flex space-x-4">
+                        <a href="#" class="bg-light hover:bg-primary hover:text-light w-12 h-12 rounded-full flex items-center justify-center text-gray-600 hover:text-light transition-all duration-300">
+                            <i class="fab fa-facebook-f text-xl"></i>
+                        </a>
+                        <a href="#" class="bg-light hover:bg-primary hover:text-light w-12 h-12 rounded-full flex items-center justify-center text-gray-600 hover:text-light transition-all duration-300">
+                            <i class="fab fa-instagram text-xl"></i>
+                        </a>
+                        <a href="#" class="bg-light hover:bg-primary hover:text-light w-12 h-12 rounded-full flex items-center justify-center text-gray-600 hover:text-light transition-all duration-300">
+                            <i class="fab fa-tiktok text-xl"></i>
+                        </a>
+                        <a href="#" class="bg-light hover:bg-primary hover:text-light w-12 h-12 rounded-full flex items-center justify-center text-gray-600 hover:text-light transition-all duration-300">
+                            <i class="fab fa-youtube text-xl"></i>
+                        </a>
+                    </div>
+                </div>
+                
+                <div class="animate-slide-up" style="animation-delay: 0.2s">
+                    <h3 class="text-2xl font-display font-bold mb-6 text-dark">Send Us a Message</h3>
+                    <form class="bg-light p-8 rounded-xl shadow-md">
+                        <div class="mb-4">
+                            <label for="contact-name" class="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                            <input type="text" id="contact-name" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-primary focus:border-primary">
+                        </div>
+                        <div class="mb-4">
+                            <label for="contact-email" class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                            <input type="email" id="contact-email" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-primary focus:border-primary">
+                        </div>
+                        <div class="mb-4">
+                            <label for="contact-subject" class="block text-sm font-medium text-gray-700 mb-1">Subject</label>
+                            <input type="text" id="contact-subject" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-primary focus:border-primary">
+                        </div>
+                        <div class="mb-6">
+                            <label for="contact-message" class="block text-sm font-medium text-gray-700 mb-1">Message</label>
+                            <textarea id="contact-message" rows="4" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-primary focus:border-primary"></textarea>
+                        </div>
+                        <button type="submit" class="w-full bg-primary hover:bg-yellow-600 text-dark font-bold py-3 px-6 rounded-md transition-all duration-300">
+                            Send Message
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Newsletter Section -->
+    <section class="py-16 bg-primary text-dark">
+        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <h2 class="text-3xl font-display font-bold mb-4">Join Our Beauty Community</h2>
+            <p class="text-lg mb-8 max-w-2xl mx-auto">
+                Subscribe to our newsletter for exclusive offers, beauty tips, and the latest trends.
+            </p>
+            <form class="flex flex-col sm:flex-row gap-4 max-w-md mx-auto">
+                <input type="email" placeholder="Your email address" class="flex-grow px-4 py-3 rounded-md focus:outline-none focus:ring-2 focus:ring-dark">
+                <button type="submit" class="bg-dark hover:bg-gray-800 text-light font-bold py-3 px-6 rounded-md transition-all duration-300">
+                    Subscribe
+                </button>
+            </form>
+        </div>
+    </section>
+    
+    <!-- Footer -->
+    <footer class="bg-dark text-light py-12">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid md:grid-cols-4 gap-8 mb-12">
+                <div>
+                    <h3 class="text-xl font-display font-bold mb-4">Ashen Salon</h3>
+                    <p class="text-accent mb-4">
+                        Luxury hair and beauty services in the heart of Colombo.
+                    </p>
+                    <div class="flex space-x-4">
+                        <a href="#" class="text-accent hover:text-primary transition-colors duration-300">
+                            <i class="fab fa-facebook-f"></i>
+                        </a>
+                        <a href="#" class="text-accent hover:text-primary transition-colors duration-300">
+                            <i class="fab fa-instagram"></i>
+                        </a>
+                        <a href="#" class="text-accent hover:text-primary transition-colors duration-300">
+                            <i class="fab fa-tiktok"></i>
+                        </a>
+                        <a href="#" class="text-accent hover:text-primary transition-colors duration-300">
+                            <i class="fab fa-youtube"></i>
+                        </a>
+                    </div>
+                </div>
+                <div>
+                    <h3 class="text-xl font-display font-bold mb-4">Quick Links</h3>
+                    <ul class="space-y-2">
+                        <li><a href="#home" class="text-accent hover:text-primary transition-colors duration-300">Home</a></li>
+                        <li><a href="#services" class="text-accent hover:text-primary transition-colors duration-300">Services</a></li>
+                        <li><a href="#gallery" class="text-accent hover:text-primary transition-colors duration-300">Gallery</a></li>
+                        <li><a href="#team" class="text-accent hover:text-primary transition-colors duration-300">Our Team</a></li>
+                        <li><a href="#contact" class="text-accent hover:text-primary transition-colors duration-300">Contact</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 class="text-xl font-display font-bold mb-4">Services</h3>
+                    <ul class="space-y-2">
+                        <li><a href="#" class="text-accent hover:text-primary transition-colors duration-300">Hair Styling</a></li>
+                        <li><a href="#" class="text-accent hover:text-primary transition-colors duration-300">Hair Coloring</a></li>
+                        <li><a href="#" class="text-accent hover:text-primary transition-colors duration-300">Skin Care</a></li>
+                        <li><a href="#" class="text-accent hover:text-primary transition-colors duration-300">Nail Care</a></li>
+                        <li><a href="#" class="text-accent hover:text-primary transition-colors duration-300">Makeup</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 class="text-xl font-display font-bold mb-4">Contact Info</h3>
+                    <ul class="space-y-2 text-accent">
+                        <li class="flex items-start">
+                            <i class="fas fa-map-marker-alt mt-1 mr-2 text-primary"></i>
+                            <span>123 Beauty Street, Colombo, Sri Lanka</span>
+                        </li>
+                        <li class="flex items-start">
+                            <i class="fas fa-phone mt-1 mr-2 text-primary"></i>
+                            <span>(123) 456-7890</span>
+                        </li>
+                        <li class="flex items-start">
+                            <i class="fas fa-envelope mt-1 mr-2 text-primary"></i>
+                            <span>info@ashensalon.com</span>
+                        </li>
+                        <li class="flex items-start">
+                            <i class="fas fa-clock mt-1 mr-2 text-primary"></i>
+                            <span>Tuesday - Saturday: 9AM - 7PM</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            <div class="border-t border-gray-700 pt-8 flex flex-col md:flex-row justify-between items-center">
+                <p class="text-accent mb-4 md:mb-0">
+                    &copy; 2025 Ashen Salon. All rights reserved.
+                </p>
+                <div class="flex space-x-6">
+                    <a href="#" class="text-accent hover:text-primary transition-colors duration-300">Privacy Policy</a>
+                    <a href="#" class="text-accent hover:text-primary transition-colors duration-300">Terms of Service</a>
+                    <a href="#" class="text-accent hover:text-primary transition-colors duration-300">Sitemap</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+    
+    <!-- Back to Top Button -->
+    <button id="back-to-top" class="fixed bottom-8 right-8 bg-primary hover:bg-yellow-600 text-dark w-12 h-12 rounded-full shadow-lg flex items-center justify-center transition-all duration-300 opacity-0 invisible">
+        <i class="fas fa-arrow-up"></i>
+    </button>
+    
+    <!-- Scripts -->
+    <script>
+        // Wait for the DOM to be fully loaded
+        document.addEventListener('DOMContentLoaded', function() {
+            // Hide loading screen after 2 seconds
+            setTimeout(function() {
+                document.getElementById('loading-screen').style.opacity = '0';
+                setTimeout(function() {
+                    document.getElementById('loading-screen').style.display = 'none';
+                }, 1000);
+            }, 2000);
+            
+            // Mobile menu toggle
+            const mobileMenuButton = document.getElementById('mobile-menu-button');
+            const mobileMenu = document.getElementById('mobile-menu');
+            
+            mobileMenuButton.addEventListener('click', function() {
+                mobileMenu.classList.toggle('hidden');
+            });
+            
+            // Close mobile menu when clicking on a link
+            const mobileMenuLinks = mobileMenu.querySelectorAll('a');
+            mobileMenuLinks.forEach(link => {
+                link.addEventListener('click', function() {
+                    mobileMenu.classList.add('hidden');
+                });
+            });
+            
+            // Smooth scrolling for anchor links
+            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+                anchor.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    
+                    const targetId = this.getAttribute('href');
+                    if (targetId === '#') return;
+                    
+                    const targetElement = document.querySelector(targetId);
+                    if (targetElement) {
+                        window.scrollTo({
+                            top: targetElement.offsetTop - 80,
+                            behavior: 'smooth'
+                        });
+                    }
+                });
+            });
+            
+            // Back to top button
+            const backToTopButton = document.getElementById('back-to-top');
+            
+            window.addEventListener('scroll', function() {
+                if (window.pageYOffset > 300) {
+                    backToTopButton.classList.remove('opacity-0', 'invisible');
+                    backToTopButton.classList.add('opacity-100', 'visible');
+                } else {
+                    backToTopButton.classList.remove('opacity-100', 'visible');
+                    backToTopButton.classList.add('opacity-0', 'invisible');
+                }
+            });
+            
+            backToTopButton.addEventListener('click', function() {
+                window.scrollTo({
+                    top: 0,
+                    behavior: 'smooth'
+                });
+            });
+            
+            // Custom cursor
+            const cursorDot = document.querySelector('.cursor-dot');
+            const cursorOutline = document.querySelector('.cursor-outline');
+            
+            window.addEventListener('mousemove', function(e) {
+                const posX = e.clientX;
+                const posY = e.clientY;
+                
+                cursorDot.style.left = `${posX}px`;
+                cursorDot.style.top = `${posY}px`;
+                
+                // cursorOutline.style.left = `${posX}px`;
+                // cursorOutline.style.top = `${posY}px`;
+                
+                cursorOutline.animate({
+                    left: `${posX}px`,
+                    top: `${posY}px`
+                }, { duration: 500, fill: "forwards" });
+            });
+            
+            // Add hover effect to interactive elements
+            const interactiveElements = document.querySelectorAll('a, button, input[type="submit"], input[type="button"], .service-card');
+            
+            interactiveElements.forEach(element => {
+                element.addEventListener('mouseenter', function() {
+                    cursorDot.style.transform = 'translate(-50%, -50%) scale(1.5)';
+                    cursorDot.style.backgroundColor = '#F59E0B';
+                    cursorOutline.style.transform = 'translate(-50%, -50%) scale(1.2)';
+                });
+                
+                element.addEventListener('mouseleave', function() {
+                    cursorDot.style.transform = 'translate(-50%, -50%) scale(1)';
+                    cursorDot.style.backgroundColor = '#F59E0B';
+                    cursorOutline.style.transform = 'translate(-50%, -50%) scale(1)';
+                });
+            });
+            
+            // Initialize Splide carousel
+            new Splide('.splide', {
+                type: 'loop',
+                perPage: 1,
+                autoplay: true,
+                interval: 5000,
+                pauseOnHover: false,
+                arrows: true,
+                pagination: true,
+                breakpoints: {
+                    768: {
+                        perPage: 1
+                    }
+                }
+            }).mount();
+            
+            // Initialize Three.js scene (placeholder for future 3D elements)
+            function initThreeJS() {
+                const container = document.getElementById('model-container');
+                if (!container) return;
+                
+                const width = container.clientWidth;
+                const height = container.clientHeight;
+                
+                const scene = new THREE.Scene();
+                const camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 1000);
+                const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+                
+                renderer.setSize(width, height);
+                container.appendChild(renderer.domElement);
+                
+                // Add lights
+                const ambientLight = new THREE.AmbientLight(0x404040);
+                scene.add(ambientLight);
+                
+                const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+                directionalLight.position.set(1, 1, 1);
+                scene.add(directionalLight);
+                
+                // Add a simple geometry
+                const geometry = new THREE.BoxGeometry(2, 2, 2);
+                const material = new THREE.MeshPhongMaterial({ 
+                    color: 0xF59E0B,
+                    transparent: true,
+                    opacity: 0.8,
+                    shininess: 100
+                });
+                const cube = new THREE.Mesh(geometry, material);
+                scene.add(cube);
+                
+                camera.position.z = 5;
+                
+                // Animation loop
+                function animate() {
+                    requestAnimationFrame(animate);
+                    
+                    cube.rotation.x += 0.01;
+                    cube.rotation.y += 0.01;
+                    
+                    renderer.render(scene, camera);
+                }
+                
+                animate();
+                
+                // Handle window resize
+                window.addEventListener('resize', function() {
+                    const newWidth = container.clientWidth;
+                    const newHeight = container.clientHeight;
+                    
+                    camera.aspect = newWidth / newHeight;
+                    camera.updateProjectionMatrix();
+                    
+                    renderer.setSize(newWidth, newHeight);
+                });
+            }
+            
+            // Initialize p5.js particle background
+            function initP5Particles() {
+                const particleCanvas = document.getElementById('particle-canvas');
+                if (!particleCanvas) return;
+                
+                const sketch = function(p) {
+                    let particles = [];
+                    const particleCount = window.innerWidth < 768 ? 30 : 50;
+                    
+                    p.setup = function() {
+                        p.createCanvas(particleCanvas.clientWidth, particleCanvas.clientHeight);
+                        
+                        // Create particles
+                        for (let i = 0; i < particleCount; i++) {
+                            particles.push({
+                                x: p.random(p.width),
+                                y: p.random(p.height),
+                                size: p.random(2, 6),
+                                speedX: p.random(-1, 1),
+                                speedY: p.random(-1, 1),
+                                color: p.color(245, 158, 11, p.random(50, 150))
+                            });
+                        }
+                    };
+                    
+                    p.draw = function() {
+                        p.clear();
+                        
+                        // Update and draw particles
+                        for (let i = 0; i < particles.length; i++) {
+                            const particle = particles[i];
+                            
+                            // Update position
+                            particle.x += particle.speedX;
+                            particle.y += particle.speedY;
+                            
+                            // Wrap around edges
+                            if (particle.x < 0) particle.x = p.width;
+                            if (particle.x > p.width) particle.x = 0;
+                            if (particle.y < 0) particle.y = p.height;
+                            if (particle.y > p.height) particle.y = 0;
+                            
+                            // Draw particle
+                            p.noStroke();
+                            p.fill(particle.color);
+                            p.ellipse(particle.x, particle.y, particle.size);
+                            
+                            // Draw connections
+                            for (let j = i + 1; j < particles.length; j++) {
+                                const other = particles[j];
+                                const distance = p.dist(particle.x, particle.y, other.x, other.y);
+                                
+                                if (distance < 150) {
+                                    p.stroke(245, 158, 11, p.map(distance, 0, 150, 50, 0));
+                                    p.line(particle.x, particle.y, other.x, other.y);
+                                }
+                            }
+                        }
+                    };
+                    
+                    p.windowResized = function() {
+                        p.resizeCanvas(particleCanvas.clientWidth, particleCanvas.clientHeight);
+                    };
+                };
+                
+                new p5(sketch, 'particle-canvas');
+            }
+            
+            // Initialize animations with GSAP
+            function initAnimations() {
+                // Animate hero elements
+                gsap.from('.animate-fade-in', {
+                    opacity: 0,
+                    y: 20,
+                    duration: 1,
+                    stagger: 0.2,
+                    ease: 'power3.out'
+                });
+                
+                // Animate service cards
+                gsap.from('.animate-slide-up', {
+                    opacity: 0,
+                    y: 50,
+                    duration: 0.8,
+                    stagger: 0.1,
+                    ease: 'back.out(1.7)',
+                    scrollTrigger: {
+                        trigger: '.animate-slide-up',
+                        start: 'top 80%',
+                        toggleActions: 'play none none none'
+                    }
+                });
+                
+                // Animate on scroll for sections
+                gsap.utils.toArray('section').forEach(section => {
+                    gsap.from(section, {
+                        opacity: 0,
+                        y: 50,
+                        duration: 1,
+                        ease: 'power3.out',
+                        scrollTrigger: {
+                            trigger: section,
+                            start: 'top 75%',
+                            toggleActions: 'play none none none'
+                        }
+                    });
+                });
+            }
+            
+            // Initialize all effects
+            initThreeJS();
+            initP5Particles();
+            initAnimations();
+        });
+    </script>
+</body>
+</html>
